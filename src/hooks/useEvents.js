@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 
-// Optimized event listener hook
 export function useEvents(readOnlyContract) {
     const [events, setEvents] = useState([])
     const lastBlockChecked = useRef(0)
@@ -16,7 +15,6 @@ export function useEvents(readOnlyContract) {
                 existing.player === e.player
             )
             if (isDuplicate) {
-                console.log('Duplicate event, skipping')
                 return s
             }
             return [e, ...s].slice(0, 100)
@@ -25,12 +23,10 @@ export function useEvents(readOnlyContract) {
 
     const pollForEvents = useCallback(async () => {
         if (!readOnlyContract) {
-            console.log('⏭️ Skipping poll: no readOnlyContract')
             return
         }
 
         if (isPolling.current) {
-            console.log('⏭️ Previous poll still running, skipping...')
             return
         }
 
@@ -39,9 +35,7 @@ export function useEvents(readOnlyContract) {
         try {
             const provider = readOnlyContract.runner.provider
 
-            // Проверяем, что это JsonRpcProvider, а не BrowserProvider
             if (provider.constructor.name === 'BrowserProvider' || provider.constructor.name === '_BrowserProvider') {
-                console.error('❌ ERROR: useEvents using BrowserProvider instead of JsonRpcProvider!')
                 isPolling.current = false
                 return
             }
@@ -63,10 +57,9 @@ export function useEvents(readOnlyContract) {
             const blockRange = Math.min(currentBlock - fromBlock + 1, 5)
             const toBlock = fromBlock + blockRange - 1
 
-            console.log(`📡 Polling events [${fromBlock} → ${toBlock}]`)
+            console.log(`Polling events [${fromBlock} → ${toBlock}]`)
 
             try {
-                // SingleGameResult events
                 const singleResultFilter = readOnlyContract.filters.SingleGameResult()
                 const singleResults = await readOnlyContract.queryFilter(singleResultFilter, fromBlock, toBlock)
 
@@ -87,7 +80,6 @@ export function useEvents(readOnlyContract) {
 
                 await new Promise(resolve => setTimeout(resolve, 100))
 
-                // MultiplayerGameResult events
                 const multiResultFilter = readOnlyContract.filters.MultiplayerGameResult()
                 const multiResults = await readOnlyContract.queryFilter(multiResultFilter, fromBlock, toBlock)
 
@@ -108,9 +100,6 @@ export function useEvents(readOnlyContract) {
 
             } catch (err) {
                 console.error('Error polling events:', err)
-                if (err.message?.includes('limit exceeded') || err.code === -32005) {
-                    console.warn('⚠️ Rate limit hit, backing off...')
-                }
             }
 
         } catch (err) {
@@ -122,20 +111,16 @@ export function useEvents(readOnlyContract) {
 
     useEffect(() => {
         if (!readOnlyContract) {
-            console.log('⏭️ No readOnlyContract, skipping event setup')
             return
         }
 
-        console.log('✅ Setting up event polling with provider:', readOnlyContract.runner.provider.constructor.name)
+        console.log('Setting up event polling with provider:', readOnlyContract.runner.provider.constructor.name)
 
-        // Poll every 20 seconds
-        pollingInterval.current = setInterval(pollForEvents, 20000)
+        pollingInterval.current = setInterval(pollForEvents, 2000)
 
-        // Initial poll after 2 seconds
-        setTimeout(pollForEvents, 2000)
+        setTimeout(pollForEvents, 200)
 
         return () => {
-            console.log('🧹 Cleaning up event polling')
             if (pollingInterval.current) {
                 clearInterval(pollingInterval.current)
             }
