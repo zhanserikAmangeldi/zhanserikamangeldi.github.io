@@ -116,9 +116,9 @@ export function useEvents(readOnlyContract) {
 
         console.log('Setting up event polling with provider:', readOnlyContract.runner.provider.constructor.name)
 
-        pollingInterval.current = setInterval(pollForEvents, 2000)
+        pollingInterval.current = setInterval(pollForEvents, 200)
 
-        setTimeout(pollForEvents, 200)
+        setTimeout(pollForEvents, 20)
 
         return () => {
             if (pollingInterval.current) {
